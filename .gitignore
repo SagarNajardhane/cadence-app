@@ -1,0 +1,22 @@
+# OS Junk
+.DS_Store
+Thumbs.db
+
+# Node dependencies & builds
+**/node_modules/
+**/dist/
+**/build/
+
+# Java / Maven artifacts
+**/target/
+!/**/src/main/**/target/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Environment secrets
+.env
+.env.local
+*.log

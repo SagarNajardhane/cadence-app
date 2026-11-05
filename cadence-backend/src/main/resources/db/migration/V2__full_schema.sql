@@ -1,0 +1,126 @@
+-- 1. ROLES TABLE
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL
+);
+
+INSERT INTO roles (name) VALUES ('ROLE_USER'), ('ROLE_ARTIST'), ('ROLE_ADMIN');
+
+-- 2. USERS TABLE
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    avatar_url VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. USER_ROLES JOIN TABLE
+CREATE TABLE user_roles (
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role_id INT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, role_id)
+);
+
+-- 4. ARTISTS TABLE
+CREATE TABLE artists (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    name VARCHAR(100) NOT NULL,
+    bio TEXT,
+    avatar_url VARCHAR(255),
+    banner_url VARCHAR(255),
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. ALBUMS TABLE
+CREATE TABLE albums (
+    id BIGSERIAL PRIMARY KEY,
+    artist_id BIGINT NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    cover_art_url VARCHAR(255),
+    release_date DATE,
+    album_type VARCHAR(20) DEFAULT 'ALBUM', -- ALBUM, SINGLE, EP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. GENRES TABLE
+CREATE TABLE genres (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    slug VARCHAR(50) UNIQUE NOT NULL,
+    color_code VARCHAR(10) DEFAULT '#6366F1'
+);
+
+INSERT INTO genres (name, slug, color_code) VALUES 
+('Electronic', 'electronic', '#6366F1'),
+('Ambient', 'ambient', '#06B6D4'),
+('Lo-Fi', 'lo-fi', '#8B5CF6'),
+('Synthwave', 'synthwave', '#EC4899'),
+('Rock', 'rock', '#F59E0B');
+
+-- 7. TRACKS TABLE
+CREATE TABLE tracks (
+    id BIGSERIAL PRIMARY KEY,
+    album_id BIGINT REFERENCES albums(id) ON DELETE CASCADE,
+    artist_id BIGINT NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    duration_seconds INT NOT NULL,
+    audio_url VARCHAR(255) NOT NULL,
+    lyrics TEXT,
+    play_count BIGINT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. TRACK_GENRES JOIN TABLE
+CREATE TABLE track_genres (
+    track_id BIGINT NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+    genre_id INT NOT NULL REFERENCES genres(id) ON DELETE CASCADE,
+    PRIMARY KEY (track_id, genre_id)
+);
+
+-- 9. PLAYLISTS TABLE
+CREATE TABLE playlists (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(100) NOT NULL,
+    description TEXT,
+    cover_art_url VARCHAR(255),
+    is_public BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 10. PLAYLIST_TRACKS JOIN TABLE
+CREATE TABLE playlist_tracks (
+    id BIGSERIAL PRIMARY KEY,
+    playlist_id BIGINT NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
+    track_id BIGINT NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+    position INT NOT NULL,
+    added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (playlist_id, position)
+);
+
+-- 11. LIKED_TRACKS TABLE
+CREATE TABLE liked_tracks (
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    track_id BIGINT NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+    liked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, track_id)
+);
+
+-- 12. LISTENING_HISTORY TABLE
+CREATE TABLE listening_history (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    track_id BIGINT NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+    played_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- INDEXES FOR PERFORMANCE
+CREATE INDEX idx_tracks_artist ON tracks(artist_id);
+CREATE INDEX idx_tracks_album ON tracks(album_id);
+CREATE INDEX idx_listening_history_user ON listening_history(user_id);
